@@ -9,7 +9,7 @@ CURRENCIES = {
     "EUR": "Euro",
     "GBP": "Libra Esterlina",
     "JYP": "Yuan Japonés",
-    "MXM": "Pesos Mexicanos",
+    "MXN": "Pesos Mexicanos",
     "USD": "Dólar Americano",
     "MLC": "MLC :("
 }
@@ -20,7 +20,8 @@ def load_env_selectors():
     env_selectors.update({
         "main_block_id": config("MAIN_BLOCK_ID", default="block-quicktabs-m-dulo-tasa-de-cambio"),
         "widget_block_id": config("WIDGET_BLOCK_ID", default="block-views-m-dulo-tasa-de-cambio-block"),
-        "base_url": config("BASE_URL", default="https://www.cadeca.cu/")
+        "base_url": config("BASE_URL", default="https://www.cadeca.cu/"),
+        "mlc_rate": config("MLC_RATE", default=120)
     })
 
 
@@ -32,6 +33,10 @@ def print_error_message(msg=None):
     if not msg:
         msg = "ERROR: No podemos leer el contenido de la página"
     print(msg)
+
+
+def get_mlc_rate():
+    return env_selectors.get("mlc_rate")
 
 
 def process_html(page_content):
@@ -53,7 +58,8 @@ def process_html(page_content):
         if not widget:
             print_error_message()
         else:
-            print(f"{'Moneda':>20}", f"{'Signo':>5}", f"{'Compra':>10}", f"{'Venta':>10}")
+            print(f"{'Moneda':>20}", f"{'Signo':>6}", f"{'Compra':>11}", f"{'Venta':>11}", f"{'~MLC':>9}")
+            mlc_rate = get_mlc_rate()
             for currency_sign, currency_name in CURRENCIES.items():
                 tr = widget.find_next("tr", class_=currency_sign)
                 if tr:
@@ -61,7 +67,8 @@ def process_html(page_content):
                     if len(tds) == 4:
                         buy_price = tds[2].text.strip()
                         sale_price = tds[3].text.strip()
-                        print(f"{currency_name:>20}", f"{currency_sign:>5}", f"{buy_price:>10}", f"{sale_price:>10}")
+                        mlc = float(buy_price)/mlc_rate
+                        print(f"{currency_name:>20}", f"{currency_sign:>6}", f"{buy_price:>11}", f"{sale_price:>11}", f"{mlc:>9.5f}")
 
 
 ##################
@@ -71,7 +78,7 @@ def process_html(page_content):
 # First load environment settings
 load_env_selectors()
 
-print("======= Start parsing wait a few seconds =======")
+print("{:#^61}".format(" Start parsing wait a few seconds "))
 
 URL = env_selectors.get("base_url")
 page = None
